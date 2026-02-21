@@ -7,7 +7,6 @@ provider "aws" {
   alias  = "account_c"
   region = "ap-south-1"
   profile="account_c"
-  region = var.aws_region
 }
 
 provider "google" {
