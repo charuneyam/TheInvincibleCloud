@@ -1,219 +1,308 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Invincible Cloud</title>
-    <link rel="stylesheet" href="styles.css" />
-  </head>
-  <body>
-    <main class="container">
-      <!-- Header -->
-      <header class="header">
-        <h1>The Invincible Cloud</h1>
-        <p>Multi-cloud load balancing simulation</p>
-      </header>
-
-      <!-- Metrics Dashboard -->
-      <section class="metrics">
-        <div class="metric">
-          <span class="metric-label">Requests</span>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Invincible Cloud Simulation</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="backdrop" aria-hidden="true"></div>
+  <main class="app-shell">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">The Invincible Cloud</p>
+        <h1>Multi-cloud request flow simulation</h1>
+        <p class="hero-text">
+          A live frontend simulation of traffic entering an EC2 NGINX edge and being routed across AWS EKS Fargate and
+          GCP GKE Autopilot services. Adjust balancing strategy, increase load, and test provider failover.
+        </p>
+      </div>
+      <div class="hero-metrics">
+        <article class="metric-card">
+          <span class="metric-label">Requests handled</span>
           <strong class="metric-value" id="heroTotalRequests">0</strong>
-        </div>
-        <div class="metric">
-          <span class="metric-label">Success</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Success rate</span>
           <strong class="metric-value" id="heroSuccessRate">100%</strong>
-        </div>
-        <div class="metric">
-          <span class="metric-label">Latency</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">Avg delivery</span>
           <strong class="metric-value" id="heroLatency">0 ms</strong>
-        </div>
-        <div class="metric">
-          <span class="metric-label">In Flight</span>
+        </article>
+        <article class="metric-card">
+          <span class="metric-label">In flight</span>
           <strong class="metric-value" id="heroInFlight">0</strong>
+        </article>
+      </div>
+    </section>
+
+    <section class="panel control-panel">
+      <div class="panel-heading">
+        <div>
+          <h2>Load balancer controls</h2>
+          <p id="strategyHint">Weighted routing splits traffic between both healthy providers using the slider below.</p>
         </div>
-      </section>
+        <span class="status-pill" id="systemStatusPill">Both providers healthy</span>
+      </div>
 
-      <!-- Controls -->
-      <section class="controls">
-        <div class="control-row">
-          <div class="control-group">
-            <label>Strategy</label>
-            <select id="strategySelect">
-              <option value="weighted">Weighted</option>
-              <option value="roundRobin">Round Robin</option>
-              <option value="latency">Latency Aware</option>
-              <option value="failover">Failover</option>
-            </select>
+      <div class="control-grid">
+        <label class="control-block">
+          <span class="control-label">Balancing strategy</span>
+          <select id="strategySelect">
+            <option value="weighted">Weighted</option>
+            <option value="roundRobin">Round robin</option>
+            <option value="latency">Latency aware</option>
+            <option value="failover">Failover</option>
+          </select>
+        </label>
+
+        <label class="control-block">
+          <span class="control-label">Ingress rate</span>
+          <div class="range-heading">
+            <span>Requests per second</span>
+            <strong id="rateValue">8 req/s</strong>
           </div>
+          <input id="rateRange" type="range" min="2" max="24" step="1" value="8">
+        </label>
 
-          <div class="control-group">
-            <label>Rate <span id="rateValue">8 req/s</span></label>
-            <input
-              id="rateRange"
-              type="range"
-              min="2"
-              max="24"
-              step="1"
-              value="8"
-            />
+        <label class="control-block">
+          <span class="control-label">Weighted split</span>
+          <div class="range-heading">
+            <span>AWS / GCP</span>
+            <strong id="weightValue">55 / 45</strong>
           </div>
+          <input id="awsWeightRange" type="range" min="10" max="90" step="5" value="55">
+        </label>
 
-          <div class="control-group" id="weightControl">
-            <label>AWS/GCP <span id="weightValue">55/45</span></label>
-            <input
-              id="awsWeightRange"
-              type="range"
-              min="10"
-              max="90"
-              step="5"
-              value="55"
-            />
+        <div class="control-actions">
+          <button id="toggleRunBtn" class="action-btn primary">Pause ingress</button>
+          <button id="burstBtn" class="action-btn">Burst x30</button>
+          <button id="resetBtn" class="action-btn">Reset metrics</button>
+          <button id="toggleAwsBtn" class="action-btn toggle aws">AWS online</button>
+          <button id="toggleGcpBtn" class="action-btn toggle gcp">GCP online</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel demo-panel">
+      <div class="demo-content">
+        <div class="demo-info">
+          <h2>🔥 Resilience Demo</h2>
+          <p id="demoMessage">Click the button to simulate a catastrophic AWS failure and watch traffic seamlessly redirect to GCP with zero downtime!</p>
+        </div>
+        <button id="destroyAwsBtn" class="demo-btn destroy-btn">💥 Destroy AWS</button>
+      </div>
+    </section>
+
+    <section class="dashboard">
+      <section class="panel topology-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Traffic topology</h2>
+            <p id="systemStatusCopy">
+              Requests enter through the EC2 NGINX edge and are distributed to healthy AWS and GCP clusters.
+            </p>
           </div>
         </div>
 
-        <div class="button-row">
-          <button id="toggleRunBtn" class="btn btn-primary">⏸ Pause</button>
-          <button id="burstBtn" class="btn">⚡ Burst</button>
-          <button id="resetBtn" class="btn">🔄 Reset</button>
-          <button id="toggleAwsBtn" class="btn btn-aws">AWS Online</button>
-          <button id="toggleGcpBtn" class="btn btn-gcp">GCP Online</button>
-        </div>
-      </section>
-
-      <!-- Visualization -->
-      <section class="visualization">
-        <div class="viz-container">
-          <svg
-            id="networkMap"
-            viewBox="0 0 1000 400"
-            role="img"
-            aria-labelledby="mapTitle mapDesc"
-          >
-            <title id="mapTitle">Cloud Load Balancing</title>
-            <desc id="mapDesc">
-              Traffic flows from clients through load balancer to AWS and GCP
-            </desc>
-
+        <div class="map-frame">
+          <svg id="networkMap" class="network-map" viewBox="0 0 1200 700" role="img" aria-labelledby="mapTitle mapDesc">
+            <title id="mapTitle">AWS and GCP request simulation</title>
+            <desc id="mapDesc">Animated requests move from users to a central load balancer and then into AWS and GCP services.</desc>
             <defs>
-              <filter id="glow">
-                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                <feMerge>
-                  <feMergeNode in="coloredBlur" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
+              <linearGradient id="panelGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#16334b" />
+                <stop offset="100%" stop-color="#0b1c2d" />
+              </linearGradient>
+              <linearGradient id="awsLine" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ffb54d" />
+                <stop offset="100%" stop-color="#ff8a00" />
+              </linearGradient>
+              <linearGradient id="gcpLine" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#7cb4ff" />
+                <stop offset="100%" stop-color="#4285f4" />
+              </linearGradient>
+              <filter id="cardShadow" x="-40%" y="-40%" width="180%" height="180%">
+                <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#06101b" flood-opacity="0.45" />
+              </filter>
+              <filter id="dotGlow" x="-100%" y="-100%" width="300%" height="300%">
+                <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#ffffff" flood-opacity="0.45" />
               </filter>
             </defs>
 
+            <g class="lane-grid">
+              <path d="M250 350 L320 350" class="connector-base" />
+              <path d="M570 350 L630 350 L630 165 L700 165" class="connector-base" />
+              <path d="M570 350 L630 350 L630 530 L700 530" class="connector-base" />
+              <path d="M910 165 L970 165" class="connector-base" />
+              <path d="M910 530 L970 530" class="connector-base" />
+
+              <path d="M570 350 L630 350 L630 165 L700 165" class="connector-flow aws-lane" />
+              <path d="M570 350 L630 350 L630 530 L700 530" class="connector-flow gcp-lane" />
+            </g>
+
             <g id="requestLayer"></g>
 
-            <!-- Connection Lines -->
-            <line x1="150" y1="200" x2="350" y2="200" class="connector" />
-            <line
-              x1="550"
-              y1="200"
-              x2="700"
-              y2="120"
-              class="connector aws-lane"
-            />
-            <line
-              x1="550"
-              y1="200"
-              x2="700"
-              y2="280"
-              class="connector gcp-lane"
-            />
-
-            <!-- Client Node -->
-            <g id="clientNode">
-              <rect
-                x="50"
-                y="170"
-                width="100"
-                height="60"
-                rx="8"
-                class="node"
-              />
-              <text x="100" y="205" class="node-text">Client</text>
+            <g id="clientNode" class="node-block neutral-node">
+              <rect x="70" y="290" width="180" height="120" rx="28" filter="url(#cardShadow)" />
+              <text x="160" y="323" class="node-overline" text-anchor="middle">Incoming traffic</text>
+              <text x="160" y="355" class="node-title" text-anchor="middle">Client</text>
+              <text x="160" y="380" class="node-body" text-anchor="middle">Browser/API</text>
             </g>
 
-            <!-- Load Balancer -->
-            <g id="lbNode">
-              <rect
-                x="350"
-                y="170"
-                width="200"
-                height="60"
-                rx="8"
-                class="node node-lb"
-              />
-              <text x="450" y="195" class="node-text">Load Balancer</text>
-              <text id="lbModeText" x="450" y="215" class="node-subtext">
-                Weighted
-              </text>
+            <g id="lbNode" class="node-block lb-node">
+              <rect x="320" y="255" width="250" height="190" rx="34" filter="url(#cardShadow)" />
+              <text x="445" y="295" class="node-overline" text-anchor="middle">Edge entrypoint</text>
+              <text x="445" y="333" class="node-title" text-anchor="middle">NGINX</text>
+              <text x="445" y="360" class="node-body" text-anchor="middle">Load Balancer</text>
+              <text x="445" y="395" class="node-metric-label" text-anchor="middle">Routing mode</text>
+              <text id="lbModeText" x="445" y="425" class="node-metric-value" text-anchor="middle">Weighted</text>
             </g>
 
-            <!-- AWS Node -->
-            <g id="awsNode" class="provider-node">
-              <rect
-                x="700"
-                y="90"
-                width="250"
-                height="60"
-                rx="8"
-                class="node node-aws"
-              />
-              <text x="825" y="115" class="node-text">AWS EKS</text>
-              <text id="awsStatus" x="825" y="135" class="node-subtext">
-                Online
-              </text>
+            <g class="cloud-label">
+              <text x="805" y="85" class="provider-heading aws" text-anchor="middle">AWS lane</text>
+              <text x="805" y="450" class="provider-heading gcp" text-anchor="middle">GCP lane</text>
             </g>
 
-            <!-- GCP Node -->
-            <g id="gcpNode" class="provider-node">
-              <rect
-                x="700"
-                y="250"
-                width="250"
-                height="60"
-                rx="8"
-                class="node node-gcp"
-              />
-              <text x="825" y="275" class="node-text">GCP GKE</text>
-              <text id="gcpStatus" x="825" y="295" class="node-subtext">
-                Online
-              </text>
+            <g id="awsEdgeNode" class="node-block aws-node">
+              <rect x="700" y="110" width="210" height="110" rx="26" filter="url(#cardShadow)" />
+              <text x="805" y="142" class="node-overline" text-anchor="middle">AWS ingress</text>
+              <text x="805" y="170" class="node-title" text-anchor="middle">ALB</text>
+              <text id="awsEdgeStatus" x="805" y="195" class="node-body" text-anchor="middle">Healthy</text>
+            </g>
+
+            <g id="gcpEdgeNode" class="node-block gcp-node">
+              <rect x="700" y="475" width="210" height="110" rx="26" filter="url(#cardShadow)" />
+              <text x="805" y="507" class="node-overline" text-anchor="middle">GCP ingress</text>
+              <text x="805" y="535" class="node-title" text-anchor="middle">Cloud LB</text>
+              <text id="gcpEdgeStatus" x="805" y="560" class="node-body" text-anchor="middle">Healthy</text>
+            </g>
+
+            <g id="awsClusterNode" class="node-block aws-cluster">
+              <rect x="970" y="70" width="180" height="220" rx="30" filter="url(#cardShadow)" />
+              <text x="1060" y="100" class="node-overline" text-anchor="middle">Compute tier</text>
+              <text x="1060" y="130" class="node-title" text-anchor="middle">Amazon EKS</text>
+              <text x="1060" y="155" class="node-body" text-anchor="middle">Fargate replicas</text>
+
+              <g class="pod-row">
+                <rect id="awsPod0" x="995" y="175" width="130" height="28" rx="14" class="pod-shell aws-pod" />
+                <text x="1012" y="194" class="pod-label">aws-pod-1</text>
+                <text id="awsPod0Count" x="1110" y="194" class="pod-count">0</text>
+              </g>
+              <g class="pod-row">
+                <rect id="awsPod1" x="995" y="210" width="130" height="28" rx="14" class="pod-shell aws-pod" />
+                <text x="1012" y="229" class="pod-label">aws-pod-2</text>
+                <text id="awsPod1Count" x="1110" y="229" class="pod-count">0</text>
+              </g>
+              <g class="pod-row">
+                <rect id="awsPod2" x="995" y="245" width="130" height="28" rx="14" class="pod-shell aws-pod" />
+                <text x="1012" y="264" class="pod-label">aws-pod-3</text>
+                <text id="awsPod2Count" x="1110" y="264" class="pod-count">0</text>
+              </g>
+            </g>
+
+            <g id="gcpClusterNode" class="node-block gcp-cluster">
+              <rect x="970" y="410" width="180" height="220" rx="30" filter="url(#cardShadow)" />
+              <text x="1060" y="440" class="node-overline" text-anchor="middle">Compute tier</text>
+              <text x="1060" y="470" class="node-title" text-anchor="middle">GKE Autopilot</text>
+              <text x="1060" y="495" class="node-body" text-anchor="middle">Managed replicas</text>
+
+              <g class="pod-row">
+                <rect id="gcpPod0" x="995" y="515" width="130" height="28" rx="14" class="pod-shell gcp-pod" />
+                <text x="1012" y="534" class="pod-label">gcp-pod-1</text>
+                <text id="gcpPod0Count" x="1110" y="534" class="pod-count">0</text>
+              </g>
+              <g class="pod-row">
+                <rect id="gcpPod1" x="995" y="550" width="130" height="28" rx="14" class="pod-shell gcp-pod" />
+                <text x="1012" y="569" class="pod-label">gcp-pod-2</text>
+                <text id="gcpPod1Count" x="1110" y="569" class="pod-count">0</text>
+              </g>
+              <g class="pod-row">
+                <rect id="gcpPod2" x="995" y="585" width="130" height="28" rx="14" class="pod-shell gcp-pod" />
+                <text x="1012" y="604" class="pod-label">gcp-pod-3</text>
+                <text id="gcpPod2Count" x="1110" y="604" class="pod-count">0</text>
+              </g>
             </g>
           </svg>
         </div>
       </section>
 
-      <!-- Stats -->
-      <section class="stats">
-        <div class="stat-card">
-          <h3>AWS</h3>
-          <div class="stat-bar">
-            <div id="awsShareBar" class="bar bar-aws"></div>
+      <aside class="sidebar">
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Live distribution</h2>
+              <p>Request split after the edge load balancer.</p>
+            </div>
           </div>
-          <div class="stat-info">
-            <span id="awsShareValue">0%</span>
-            <span id="awsLatencyBadge">0 ms</span>
-          </div>
-        </div>
 
-        <div class="stat-card">
-          <h3>GCP</h3>
-          <div class="stat-bar">
-            <div id="gcpShareBar" class="bar bar-gcp"></div>
-          </div>
-          <div class="stat-info">
-            <span id="gcpShareValue">0%</span>
-            <span id="gcpLatencyBadge">0 ms</span>
-          </div>
-        </div>
-      </section>
-    </main>
+          <article class="share-card aws-share">
+            <div class="share-head">
+              <strong>AWS</strong>
+              <span id="awsShareValue">0%</span>
+            </div>
+            <div class="share-bar"><span id="awsShareBar"></span></div>
+            <p id="awsShareDetail" class="share-detail">0 requests routed to Amazon EKS.</p>
+          </article>
 
-    <script src="app.js"></script>
-  </body>
+          <article class="share-card gcp-share">
+            <div class="share-head">
+              <strong>GCP</strong>
+              <span id="gcpShareValue">0%</span>
+            </div>
+            <div class="share-bar"><span id="gcpShareBar"></span></div>
+            <p id="gcpShareDetail" class="share-detail">0 requests routed to GKE Autopilot.</p>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Service runtime</h2>
+              <p>Provider health and average delivery times.</p>
+            </div>
+          </div>
+
+          <article class="service-card aws-service" id="awsServiceCard">
+            <div class="service-head">
+              <strong>AWS services</strong>
+              <span id="awsHealthBadge" class="service-badge">Healthy</span>
+            </div>
+            <p>EC2 NGINX target, ALB ingress, Amazon EKS Fargate pods.</p>
+            <div class="service-foot">
+              <span id="awsLatencyBadge">0 ms avg</span>
+              <span id="awsPodSummary">3 pods online</span>
+            </div>
+          </article>
+
+          <article class="service-card gcp-service" id="gcpServiceCard">
+            <div class="service-head">
+              <strong>GCP services</strong>
+              <span id="gcpHealthBadge" class="service-badge">Healthy</span>
+            </div>
+            <p>Cloud Load Balancer target, GKE ingress, GKE Autopilot pods.</p>
+            <div class="service-foot">
+              <span id="gcpLatencyBadge">0 ms avg</span>
+              <span id="gcpPodSummary">3 pods online</span>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Recent routing events</h2>
+              <p>Load balancing and failover decisions in real time.</p>
+            </div>
+          </div>
+          <ul id="eventLog" class="event-log"></ul>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
 </html>
