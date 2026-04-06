@@ -421,6 +421,18 @@ function syncUi() {
   refreshMetrics();
 }
 
+const displayValues = {
+  totalRequests: 0,
+  successRate: 100,
+  latency: 0,
+  inFlight: 0,
+};
+
+function lerpDisplay(current, target, speed) {
+  if (Math.abs(target - current) < 0.5) return target;
+  return current + (target - current) * speed;
+}
+
 function refreshMetrics() {
   const totalResolved = state.metrics.totalCompleted + state.metrics.dropped;
   const successRate = totalResolved === 0 ? 100 : (state.metrics.totalCompleted / totalResolved) * 100;
@@ -429,10 +441,15 @@ function refreshMetrics() {
   const awsShare = providerTotal === 0 ? 0 : (state.metrics.providerCounts.aws / providerTotal) * 100;
   const gcpShare = providerTotal === 0 ? 0 : (state.metrics.providerCounts.gcp / providerTotal) * 100;
 
-  ui.heroTotalRequests.textContent = String(state.metrics.totalCompleted);
-  ui.heroSuccessRate.textContent = `${successRate.toFixed(1)}%`;
-  ui.heroLatency.textContent = `${Math.round(overallLatency)} ms`;
-  ui.heroInFlight.textContent = String(state.inFlight.length);
+  displayValues.totalRequests = lerpDisplay(displayValues.totalRequests, state.metrics.totalCompleted, 0.18);
+  displayValues.successRate = lerpDisplay(displayValues.successRate, successRate, 0.12);
+  displayValues.latency = lerpDisplay(displayValues.latency, overallLatency, 0.1);
+  displayValues.inFlight = lerpDisplay(displayValues.inFlight, state.inFlight.length, 0.25);
+
+  ui.heroTotalRequests.textContent = String(Math.round(displayValues.totalRequests));
+  ui.heroSuccessRate.textContent = `${displayValues.successRate.toFixed(1)}%`;
+  ui.heroLatency.textContent = `${Math.round(displayValues.latency)} ms`;
+  ui.heroInFlight.textContent = String(Math.round(displayValues.inFlight));
 
   ui.awsShareBar.style.width = `${awsShare}%`;
   ui.gcpShareBar.style.width = `${gcpShare}%`;
