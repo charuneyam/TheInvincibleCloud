@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Invincible Cloud</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <!-- Header -->
+      <header class="header">
+        <h1>The Invincible Cloud</h1>
+        <p>Multi-cloud load balancing simulation</p>
+      </header>
+
+      <!-- Metrics Dashboard -->
+      <section class="metrics">
+        <div class="metric">
+          <span class="metric-label">Requests</span>
+          <strong class="metric-value" id="heroTotalRequests">0</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Success</span>
+          <strong class="metric-value" id="heroSuccessRate">100%</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">Latency</span>
+          <strong class="metric-value" id="heroLatency">0 ms</strong>
+        </div>
+        <div class="metric">
+          <span class="metric-label">In Flight</span>
+          <strong class="metric-value" id="heroInFlight">0</strong>
+        </div>
+      </section>
+
+      <!-- Controls -->
+      <section class="controls">
+        <div class="control-row">
+          <div class="control-group">
+            <label>Strategy</label>
+            <select id="strategySelect">
+              <option value="weighted">Weighted</option>
+              <option value="roundRobin">Round Robin</option>
+              <option value="latency">Latency Aware</option>
+              <option value="failover">Failover</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <label>Rate <span id="rateValue">8 req/s</span></label>
+            <input
+              id="rateRange"
+              type="range"
+              min="2"
+              max="24"
+              step="1"
+              value="8"
+            />
+          </div>
+
+          <div class="control-group" id="weightControl">
+            <label>AWS/GCP <span id="weightValue">55/45</span></label>
+            <input
+              id="awsWeightRange"
+              type="range"
+              min="10"
+              max="90"
+              step="5"
+              value="55"
+            />
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="toggleRunBtn" class="btn btn-primary">⏸ Pause</button>
+          <button id="burstBtn" class="btn">⚡ Burst</button>
+          <button id="resetBtn" class="btn">🔄 Reset</button>
+          <button id="toggleAwsBtn" class="btn btn-aws">AWS Online</button>
+          <button id="toggleGcpBtn" class="btn btn-gcp">GCP Online</button>
+        </div>
+      </section>
+
+      <!-- Visualization -->
+      <section class="visualization">
+        <div class="viz-container">
+          <svg
+            id="networkMap"
+            viewBox="0 0 1000 400"
+            role="img"
+            aria-labelledby="mapTitle mapDesc"
+          >
+            <title id="mapTitle">Cloud Load Balancing</title>
+            <desc id="mapDesc">
+              Traffic flows from clients through load balancer to AWS and GCP
+            </desc>
+
+            <defs>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
+                <feMerge>
+                  <feMergeNode in="coloredBlur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+
+            <g id="requestLayer"></g>
+
+            <!-- Connection Lines -->
+            <line x1="150" y1="200" x2="350" y2="200" class="connector" />
+            <line
+              x1="550"
+              y1="200"
+              x2="700"
+              y2="120"
+              class="connector aws-lane"
+            />
+            <line
+              x1="550"
+              y1="200"
+              x2="700"
+              y2="280"
+              class="connector gcp-lane"
+            />
+
+            <!-- Client Node -->
+            <g id="clientNode">
+              <rect
+                x="50"
+                y="170"
+                width="100"
+                height="60"
+                rx="8"
+                class="node"
+              />
+              <text x="100" y="205" class="node-text">Client</text>
+            </g>
+
+            <!-- Load Balancer -->
+            <g id="lbNode">
+              <rect
+                x="350"
+                y="170"
+                width="200"
+                height="60"
+                rx="8"
+                class="node node-lb"
+              />
+              <text x="450" y="195" class="node-text">Load Balancer</text>
+              <text id="lbModeText" x="450" y="215" class="node-subtext">
+                Weighted
+              </text>
+            </g>
+
+            <!-- AWS Node -->
+            <g id="awsNode" class="provider-node">
+              <rect
+                x="700"
+                y="90"
+                width="250"
+                height="60"
+                rx="8"
+                class="node node-aws"
+              />
+              <text x="825" y="115" class="node-text">AWS EKS</text>
+              <text id="awsStatus" x="825" y="135" class="node-subtext">
+                Online
+              </text>
+            </g>
+
+            <!-- GCP Node -->
+            <g id="gcpNode" class="provider-node">
+              <rect
+                x="700"
+                y="250"
+                width="250"
+                height="60"
+                rx="8"
+                class="node node-gcp"
+              />
+              <text x="825" y="275" class="node-text">GCP GKE</text>
+              <text id="gcpStatus" x="825" y="295" class="node-subtext">
+                Online
+              </text>
+            </g>
+          </svg>
+        </div>
+      </section>
+
+      <!-- Stats -->
+      <section class="stats">
+        <div class="stat-card">
+          <h3>AWS</h3>
+          <div class="stat-bar">
+            <div id="awsShareBar" class="bar bar-aws"></div>
+          </div>
+          <div class="stat-info">
+            <span id="awsShareValue">0%</span>
+            <span id="awsLatencyBadge">0 ms</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <h3>GCP</h3>
+          <div class="stat-bar">
+            <div id="gcpShareBar" class="bar bar-gcp"></div>
+          </div>
+          <div class="stat-info">
+            <span id="gcpShareValue">0%</span>
+            <span id="gcpLatencyBadge">0 ms</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
