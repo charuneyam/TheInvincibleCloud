@@ -6,7 +6,7 @@ variable "key_name" {
 variable "aws_availability_zone" {
   type        = string
   description = "AWS AZ for the public subnet"
-  default     = "us-east-1a"
+  default     = "ap-south-1a"
 }
 
 variable "gcp_vpc_cidr" {
